@@ -7,7 +7,7 @@ Msun=3e20 #in kg
 yr=3.15e7 #in seconds
 
 class planet:
-    def __init__(self,M,Mp,R,a,e,beta=8.72,Rp=0.1,Ag=0.1):
+    def __init__(self,M,Mp,R,a,e,vTheta,vPhi,beta=8.72,Rp=0.1,Ag=0.1):
         self.M=M
         self.R=R
         self.beta=beta
@@ -87,7 +87,7 @@ def deltaTide(t,pl,whichMode=1):
 def deltaBeam(t,pl):
     velocity=vOrbit(t,pl)
     return 4*velocity/3e8
-def deltaReflect(t,pl,Ag=0.1):
+def deltaReflect(t,pl):
     Phi=findPhi(t,pl)
     psi=pl.vPhi-Phi
     eta=findEta(t,pl)
@@ -96,7 +96,7 @@ def deltaReflect(t,pl,Ag=0.1):
     gamma=np.abs(np.arctan2(sGamma,cGamma))
     num=sGamma+(np.pi-gamma)*cGamma
     denom=np.pi*(1-pl.e*np.cos(eta))
-    return Ag*np.power(pl.Rp/pl.a,2)*num/denom
+    return pl.Ag*np.power(pl.Rp/pl.a,2)*num/denom
 def deltaSum(t,pl):
     return deltaTide(t,pl)+deltaBeam(t,pl)+deltaReflect(t,pl)
 
