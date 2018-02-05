@@ -47,4 +47,4 @@ plot these (in days and parts per million)
     
 giving
 
-   IMAGE
+![What is this](examplePlot.png)
