@@ -7,17 +7,17 @@ Msun=3e20 #in kg
 yr=3.15e7 #in seconds
 
 class planet:
-    def __init__(self,M,Mp,R,a,e,vTheta,vPhi,beta=8.72,Rp=0.1,Ag=0.1):
-        self.M=M
-        self.R=R
-        self.beta=beta
-        self.Mp=Mp
-        self.Rp=Rp
-        self.Ag=Ag
-        self.a=a
-        self.e=e
-        self.vTheta=vTheta
-        self.vPhi=vPhi
+    def __init__(self):
+        self.M=1 #stellar masses
+        self.R=1 #stellar radii
+        self.beta=8.72 #from Generozov et al. 2018
+        self.Mp=0.001
+        self.Rp=0.1
+        self.Ag=0.1
+        self.a=10
+        self.e=0.5
+        self.vTheta=np.pi/2
+        self.vPhi=0
 
 def findT(eta,pl,t=0): #can be used to find t (when t argument omitted) or solved to find eta (when t supplied) 
     return np.sqrt((pl.a**3)/(G*pl.M)) * (eta - pl.e*np.sin(eta)) - t #=0 when eta is the correct value (used in below root solve)
