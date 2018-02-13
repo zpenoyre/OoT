@@ -3,7 +3,7 @@ import scipy.optimize
 import scipy.integrate
 G=3.925e8 #in Rsun, Msun and yrs
 Rsun=6.96e8 #in m
-Msun=3e20 #in kg
+Msun=2e30 #in kg
 yr=3.15e7 #in seconds
 
 class planet:
@@ -25,10 +25,13 @@ def findEta(t,pl):
     if pl.e==0:
         thisEta=np.sqrt(G*pl.M/(pl.a**3))*t
     else:
-        uBound=t*np.sqrt((G*pl.M) / (pl.a**3)) + 2*pl.e
-        lBound=t*np.sqrt((G*pl.M) / (pl.a**3)) - 2*pl.e
-        thisEta=0.5*(lBound+uBound)
-        #thisEta=scipy.optimize.fsolve(findT,0.5*(lBound+uBound),args=(pl,t),xtol=0.5) #must find eta by a (well-behaved) numeric root solve
+        eta0=t*np.sqrt((G*pl.M) / (pl.a**3))
+        eta1=pl.e*np.sin(eta0)/(1-pl.e*np.cos(eta0))
+        eta3=(pl.e*np.sin(eta0+eta1) - eta1)/(1-pl.e*np.cos(eta0+eta1))
+        thisEta=eta0+eta1+eta3 #accurate up to and including O(e^3)
+        #uBound=t*np.sqrt((G*pl.M) / (pl.a**3)) + 2*pl.e
+        #lBound=t*np.sqrt((G*pl.M) / (pl.a**3)) - 2*pl.e
+        #thisEta=scipy.optimize.fsolve(findT,0.5*(lBound+uBound),args=(pl,t)) #truly accurate but slow, must find eta by a (well-behaved) numeric root solve
     return thisEta
 def findPhi(t,pl):
     eta=findEta(t,pl)
@@ -88,7 +91,7 @@ def deltaTide(t,pl,whichMode=1):
 def deltaBeam(t,pl):
     velocity=vOrbit(t,pl)
     return 4*velocity/3e8
-def deltaReflect(t,pl):
+def deltaReflect(t,pl,secondary=1):
     Phi=findPhi(t,pl)
     psi=pl.vPhi-Phi
     eta=findEta(t,pl)
@@ -97,7 +100,18 @@ def deltaReflect(t,pl):
     gamma=np.abs(np.arctan2(sGamma,cGamma))
     num=sGamma+(np.pi-gamma)*cGamma
     denom=np.pi*(1-pl.e*np.cos(eta))
-    return pl.Ag*np.power(pl.Rp/pl.a,2)*num/denom
+    #checking for secondary eclipse
+    eclipseFactor=1
+    if secondary==1:
+        r=pl.a*(1-pl.e*np.cos(eta))
+        d=np.abs(r*np.sqrt(1-np.power(np.sin(pl.vTheta)*np.cos(psi),2)))
+        d[d>(pl.R+pl.Rp)]=(1-1e-6)*(pl.R+pl.Rp) #small correction to avoid unsolvable cos terms
+        d[d<(pl.R-pl.Rp)]=(1+1e-6)*(pl.R-pl.Rp)
+        Atop=(pl.Rp**2)*np.arccos((d**2 + pl.Rp**2 - pl.R**2)/(2*d*pl.Rp)) + (pl.R**2)*np.arccos((d**2 + pl.R**2 - pl.Rp**2)/(2*d*pl.R))
+        Abottom=-0.5*np.sqrt((d+pl.Rp+pl.R)*(d+pl.R-pl.Rp)*(d-pl.R+pl.Rp)*(-d+pl.R+pl.Rp))
+        eclipseFactor=(np.pi*pl.Rp**2 - (Atop + Abottom))/(np.pi*pl.Rp**2)
+        eclipseFactor[eclipseFactor>1]=1
+    return eclipseFactor*pl.Ag*np.power(pl.Rp/pl.a,2)*num/denom
 def deltaSum(t,pl):
     return deltaTide(t,pl)+deltaBeam(t,pl)+deltaReflect(t,pl)
 
