@@ -27,7 +27,8 @@ def findEta(t,pl):
     else:
         uBound=t*np.sqrt((G*pl.M) / (pl.a**3)) + 2*pl.e
         lBound=t*np.sqrt((G*pl.M) / (pl.a**3)) - 2*pl.e
-        thisEta=scipy.optimize.fsolve(findT,0.5*(lBound+uBound),args=(pl,t)) #must find eta by a (well-behaved) numeric root solve
+        thisEta=0.5*(lBound+uBound)
+        #thisEta=scipy.optimize.fsolve(findT,0.5*(lBound+uBound),args=(pl,t),xtol=0.5) #must find eta by a (well-behaved) numeric root solve
     return thisEta
 def findPhi(t,pl):
     eta=findEta(t,pl)
