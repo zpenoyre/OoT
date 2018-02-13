@@ -18,6 +18,9 @@ class planet:
         self.e=0.5
         self.vTheta=np.pi/2
         self.vPhi=0
+        
+class NonTransitingError(Exception):
+    pass
 
 def findT(eta,pl,t=0): #can be used to find t (when t argument omitted) or solved to find eta (when t supplied) 
     return np.sqrt((pl.a**3)/(G*pl.M)) * (eta - pl.e*np.sin(eta)) - t #=0 when eta is the correct value (used in below root solve)
@@ -127,7 +130,7 @@ def batman(pl): #returns parameters for batman (https://www.cfa.harvard.edu/~lkr
     
     b=pl.a*(1-pl.e*np.cos(eta0))*np.cos(pl.vTheta)/pl.R #projected impact paramter of planet at closest approach
     if b>(pl.R+pl.Rp)/pl.R:
-        print('Planet does not transit!') #perhaps this should throw a more substantial error...
+        raise NonTransitingError("This planet does not transit!")
     return t0,per,rp,a,inc,ecc,w
     
 def anchors(pl): #returns parameters for stellar anchor calculations (https://arxiv.org/abs/1710.07293) to use, assuming planet transits
@@ -136,7 +139,7 @@ def anchors(pl): #returns parameters for stellar anchor calculations (https://ar
     per=365*findT(2*np.pi,pl) #orbital period in days
     b=pl.a*(1-pl.e*np.cos(eta0))*np.cos(pl.vTheta)/pl.R #projected impact paramter of planet at closest approach
     if b>(pl.R+pl.Rp)/pl.R:
-        print('Planet does not transit!') #perhaps this should throw a more substantial error...
+        raise NonTransitingError("This planet does not transit!")
     rho=3*pl.M*Msun/(4*np.pi*(pl.R*Rsun)**3) #mean stellar density in kgm-3
     logRho=np.log10(rho)
     Rp_R=pl.Rp/pl.R # ratio of planetary to stellar radii
