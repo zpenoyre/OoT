@@ -1,10 +1,12 @@
 import numpy as np
 import scipy.optimize
 import scipy.integrate
-G=3.925e8 #in Rsun, Msun and yrs
+Gyr=3.925e8 #in Rsun, Msun and yrs
+G=2946 #in Rsun, Msun and days
 Rsun=6.96e8 #in m
 Msun=2e30 #in kg
 yr=3.15e7 #in seconds
+day=86400 #in seconds
 
 class planet:
     def __init__(self):
@@ -18,17 +20,18 @@ class planet:
         self.e=0.5
         self.vTheta=np.pi/2
         self.vPhi=0
+        self.tp=0 #time of periapse (if using real data with arbitrary t=0)
         
 class NonTransitingError(Exception):
     pass
 
 def findT(eta,pl,t=0): #can be used to find t (when t argument omitted) or solved to find eta (when t supplied) 
-    return np.sqrt((pl.a**3)/(G*pl.M)) * (eta - pl.e*np.sin(eta)) - t #=0 when eta is the correct value (used in below root solve)
+    return np.sqrt((pl.a**3)/(G*pl.M)) * (eta - pl.e*np.sin(eta)) - (t-pl.tp) #=0 when eta is the correct value (used in below root solve)
 def findEta(t,pl):
     if pl.e==0:
-        thisEta=np.sqrt(G*pl.M/(pl.a**3))*t
+        thisEta=np.sqrt(G*pl.M/(pl.a**3))*(t-pl.tp)
     else:
-        eta0=t*np.sqrt((G*pl.M) / (pl.a**3))
+        eta0=(t-pl.tp)*np.sqrt((G*pl.M) / (pl.a**3))
         eta1=pl.e*np.sin(eta0)/(1-pl.e*np.cos(eta0))
         eta3=(pl.e*np.sin(eta0+eta1) - eta1)/(1-pl.e*np.cos(eta0+eta1))
         thisEta=eta0+eta1+eta3 #accurate up to and including O(e^3)
@@ -82,7 +85,7 @@ def findVelocity(t,pl,whichMode=1):
 def vOrbit(t,pl):
     Phi=findPhi(t,pl)
     psi=pl.vPhi-Phi
-    return np.sqrt(G*pl.M/(pl.a*(1-pl.e**2)))*(pl.Mp/pl.M)*np.sin(pl.vTheta)*(np.sin(psi)+pl.e*np.sin(pl.vPhi))*(Rsun/yr) # in ms-1
+    return np.sqrt(G*pl.M/(pl.a*(1-pl.e**2)))*(pl.Mp/pl.M)*np.sin(pl.vTheta)*(np.sin(psi)+pl.e*np.sin(pl.vPhi))*(Rsun/day) # in ms-1
 def vTide(t,pl,whichMode=1):
     velocity=findVelocity(t,pl,whichMode=whichMode)
     return -(4/15)*velocity
@@ -120,8 +123,8 @@ def deltaSum(t,pl):
 
 def batman(pl): #returns parameters for batman (https://www.cfa.harvard.edu/~lkreidberg/batman/) to use, assuming planet transits
     eta0=findEtaPhi(pl.vPhi,pl)
-    t0=365*findT(eta0,pl) #time of transit in days (between 0 and P), remembering periapse is at t=0
-    per=365*findT(2*np.pi,pl) #orbital period in days
+    per=findT(2*np.pi,pl)-findT(0,pl) #orbital period in days
+    t0=(pl.tp+findT(eta0,pl)) % per #time of transit in days (between 0 and P), remembering periapse is at t=tp (tp=0 unles set in planet parameters)
     rp=pl.Rp/pl.R #planet radius in units of stellar radius
     a=pl.a/pl.R #semi-major axis in units of stellar radius
     inc=(((180/np.pi)*pl.vTheta+90)%180)-90 #orbital inclination in degrees (same measure, except planet-people convention is -90 to 90 I believe)
@@ -135,8 +138,8 @@ def batman(pl): #returns parameters for batman (https://www.cfa.harvard.edu/~lkr
     
 def anchors(pl): #returns parameters for stellar anchor calculations (https://arxiv.org/abs/1710.07293) to use, assuming planet transits
     eta0=findEtaPhi(pl.vPhi,pl)
-    t0=365*findT(eta0,pl) #time of transit in days (between 0 and P), remembering periapse is at t=0
-    per=365*findT(2*np.pi,pl) #orbital period in days
+    per=findT(2*np.pi,pl)-findT(0,pl) #orbital period in days
+    t0=(pl.tp+findT(eta0,pl)) % per #time of transit in days (between 0 and P), remembering periapse is at t=tp (tp=0 unles set in planet parameters)
     b=pl.a*(1-pl.e*np.cos(eta0))*np.cos(pl.vTheta)/pl.R #projected impact paramter of planet at closest approach
     if b>(pl.R+pl.Rp)/pl.R:
         raise NonTransitingError("This planet does not transit!")
