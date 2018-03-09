@@ -12,7 +12,7 @@ class planet:
     def __init__(self):
         self.M=1 #stellar masses
         self.R=1 #stellar radii
-        self.beta=8.72 #from Generozov et al. 2018
+        self.beta=3#8.72 #from Generozov et al. 2018
         self.Mp=0.001
         self.Rp=0.1
         self.Ag=0.1
@@ -101,7 +101,7 @@ def deltaReflect(t,pl,secondary=1):
     Phi=findPhi(t,pl)
     psi=pl.vPhi-Phi
     eta=findEta(t,pl)
-    cGamma=np.sin(pl.vTheta)*np.cos(psi)
+    cGamma=-np.sin(pl.vTheta)*np.cos(psi)
     sGamma=np.sqrt(1-cGamma**2)
     gamma=np.abs(np.arctan2(sGamma,cGamma))
     num=sGamma+(np.pi-gamma)*cGamma
@@ -123,11 +123,13 @@ def deltaSum(t,pl):
 
 def batman(pl): #returns parameters for batman (https://www.cfa.harvard.edu/~lkreidberg/batman/) to use, assuming planet transits
     eta0=findEtaPhi(pl.vPhi,pl)
+    print('eta0: ',eta0)
+    print('findT: ',findT(eta0,pl))
     per=findT(2*np.pi,pl)-findT(0,pl) #orbital period in days
-    t0=(pl.tp+findT(eta0,pl)) % per #time of transit in days (between 0 and P), remembering periapse is at t=tp (tp=0 unles set in planet parameters)
+    t0=findT(eta0,pl)  #time of transit in days (between 0 and P), remembering periapse is at t=tp (tp=0 unles set in planet parameters)
     rp=pl.Rp/pl.R #planet radius in units of stellar radius
     a=pl.a/pl.R #semi-major axis in units of stellar radius
-    inc=(((180/np.pi)*pl.vTheta+90)%180)-90 #orbital inclination in degrees (same measure, except planet-people convention is -90 to 90 I believe)
+    inc=(180/np.pi)*pl.vTheta #orbital inclination in degrees (same measure, except planet-people convention is -90 to 90 I believe)
     ecc=pl.e #orbital eccentricity (exactly the same)
     w=(90-((180/np.pi)*pl.vPhi)) % 360 #longitude of periastron in degrees
     
