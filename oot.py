@@ -130,19 +130,22 @@ def deltaReflect(t,pl,secondary=1): #[raw units->unitless]
     num=sGamma+(np.pi-gamma)*cGamma
     denom=np.pi*(1-pl.e*np.cos(eta))
     #checking for secondary eclipse
-    eclipseFactor=1
+    eclipseFactor=np.ones_like(t)
     if secondary==1:
         r=aUnit*pl.a*(1-pl.e*np.cos(eta)) #in rSun
-        d=np.abs(r*np.sqrt(1-np.power(np.sin(pl.vTheta)*np.cos(psi),2))) #in rSun
-        d[d>(pl.R+pl.Rp)]=(1-1e-6)*(pl.R+pl.Rp*rUnit) #small correction to avoid unsolvable cos terms
-        d[d<(pl.R-pl.Rp)]=(1+1e-6)*(pl.R-pl.Rp*rUnit)
-        Atop=((rUnit*pl.Rp)**2)*np.arccos((d**2 + (rUnit*pl.Rp)**2 - pl.R**2)/(2*d*(rUnit*pl.Rp))) + (pl.R**2)*np.arccos((d**2 + pl.R**2 - (rUnit*pl.Rp)**2)/(2*d*pl.R))
-        Abottom=-0.5*np.sqrt((d+(rUnit*pl.Rp)+pl.R)*(d+(rUnit*pl.Rp)-pl.Rp)*(d-pl.R+(rUnit*pl.Rp))*(-d+pl.R+(rUnit*pl.Rp)))
-        eclipseFactor=(np.pi*(rUnit*pl.Rp)**2 - (Atop + Abottom))/(np.pi*(rUnit*pl.Rp)**2)
-        eclipseFactor[eclipseFactor>1]=1
+        d=np.abs(r*np.sqrt(1-np.power(np.sin(pl.vTheta)*np.cos(psi),2))) #projected distance in rSun
+        total=np.argwhere((d<(pl.R-pl.Rp)) & ((psi%(2*np.pi)) > np.pi/2) & ((psi%(2*np.pi)) < 3*np.pi/2)) #indices of times when there is a total secondary eclipse
+        eclipseFactor[total]=0
+        partial=np.argwhere((d<(pl.R+pl.Rp)) & (d>(pl.R-pl.Rp)) & ((psi%(2*np.pi)) > np.pi/2) & ((psi%(2*np.pi)) < 3*np.pi/2)) #indices of times when there is a partial secondary eclipse
+        #using circle cirle intersection formula from Mathworld
+        firstTerm=((rUnit*pl.Rp)**2)*np.arccos((d**2 + (rUnit*pl.Rp)**2 - pl.R**2)/(2*d*(rUnit*pl.Rp)))
+        secondTerm=(pl.R**2)*np.arccos((d**2 + pl.R**2 - (rUnit*pl.Rp)**2)/(2*d*pl.R))
+        thirdTerm=-0.5*np.sqrt((d+(rUnit*pl.Rp)+pl.R)*(d+(rUnit*pl.Rp)-pl.R)*(d+pl.R-(rUnit*pl.Rp))*(-d+pl.R+(rUnit*pl.Rp)))
+        overlap=(firstTerm+secondTerm+thirdTerm) /(np.pi*(rUnit*pl.Rp)**2)
+        eclipseFactor[partial]=1-overlap[partial]
     return eclipseFactor*pl.Ag*np.power((rUnit*pl.Rp)/(aUnit*pl.a),2)*num/denom
-def deltaSum(t,pl): #[raw unit->unitless]
-    return deltaTide(t,pl)+deltaBeam(t,pl)+deltaReflect(t,pl)
+def deltaSum(t,pl,secondary=1): #[raw unit->unitless]
+    return deltaTide(t,pl)+deltaBeam(t,pl)+deltaReflect(t,pl,secondary=secondary)
 
 def batman(pl): #returns parameters for batman (https://www.cfa.harvard.edu/~lkreidberg/batman/) to use, assuming planet transits
     eta0=findEtaPhi(pl.vPhi,pl)
