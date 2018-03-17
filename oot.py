@@ -20,6 +20,8 @@ mUnit=1 #planet mass unit in mSun
 tUnit=1 #time unit in days
 aUnit=1 #semi-major axis unit in rSun
 
+exact=0
+
 class planet:
     def __init__(self):
         self.M=1 #stellar masses
@@ -47,15 +49,18 @@ def findTransit(pl): #returns time of center of transit [raw units->raw units]
 def findEta(t,pl): #[raw units->unitless]
     if pl.e==0:
         thisEta=np.sqrt(G*pl.M/((pl.a*aUnit)**3))*(t-pl.tp)*tUnit
-    else:
+    elif exact==0:
         eta0=(t-pl.tp)*tUnit*np.sqrt((G*pl.M) / ((pl.a*aUnit)**3))
-        eta1=pl.e*np.sin(eta0)/(1-pl.e*np.cos(eta0))
-        eta3=(pl.e*np.sin(eta0+eta1) - eta1)/(1-pl.e*np.cos(eta0+eta1))
-        thisEta=eta0+eta1+eta3 #accurate up to and including O(e^3)
+        #eta1=pl.e*np.sin(eta0)/(1-pl.e*np.cos(eta0))
+        eta1=pl.e*np.sin(eta0)
+        eta2=(pl.e**2)*np.sin(eta0)*np.cos(eta0)
+        eta3=(pl.e**3)*np.sin(eta0)*(1-(3/2)*(np.sin(eta0)**2))
+        thisEta=eta0+eta1+eta2+eta3 #accurate up to and including O(e^3)
+    elif exact==1:
         #Below is exact solution, much slower but if needed could be commented back out (and the above 4 lines removed)
-        #uBound=t*np.sqrt((G*pl.M) / (pl.a**3)) + 2*pl.e
-        #lBound=t*np.sqrt((G*pl.M) / (pl.a**3)) - 2*pl.e
-        #thisEta=scipy.optimize.fsolve(findT,0.5*(lBound+uBound),args=(pl,t)) #truly accurate but slow, must find eta by a (well-behaved) numeric root solve
+        uBound=t*np.sqrt((G*pl.M) / ((aUnit*pl.a)**3)) + 2*pl.e
+        lBound=t*np.sqrt((G*pl.M) / ((aUnit*pl.a)**3)) - 2*pl.e
+        thisEta=scipy.optimize.fsolve(findT,0.5*(lBound+uBound),args=(pl,t)) #truly accurate but slow, must find eta by a (well-behaved) numeric root solve
     return thisEta
 def findPhi(t,pl): #[raw units->unitless]
     eta=findEta(t,pl)
@@ -185,21 +190,18 @@ def setOrbitUnits(unit):
     elif unit=='AU':
         aUnit=AU
     else:
-        print('orbital distance unit not recognized, possible choices are "solar" (default), "AU")
+        print('orbital distance unit not recognized, possible choices are "solar" (default), "AU"')
         
-
-def anchors(pl): #returns parameters for stellar anchor calculations (https://arxiv.org/abs/1710.07293) to use, assuming planet transits
-    eta0=findEtaPhi(pl.vPhi,pl)
-    per=findT(2*np.pi,pl)-findT(0,pl) #orbital period in days
-    t0=(pl.tp+findT(eta0,pl)) % per #time of transit in days (between 0 and P), remembering periapse is at t=tp (tp=0 unles set in planet parameters)
-    b=pl.a*(1-pl.e*np.cos(eta0))*np.cos(pl.vTheta)/pl.R #projected impact paramter of planet at closest approach
-    if b>(pl.R+pl.Rp)/pl.R:
-        raise NonTransitingError("This planet does not transit!")
-    rho=3*pl.M*Msun/(4*np.pi*(pl.R*Rsun)**3) #mean stellar density in kgm-3
-    logRho=np.log10(rho)
-    Rp_R=pl.Rp/pl.R # ratio of planetary to stellar radii
-    omega=(np.pi/2)-pl.vPhi 
-    cos=np.sqrt(pl.e)*np.cos(omega)
-    sin=np.sqrt(pl.e)*np.sin(omega)
-    return t0,per,b,logRho,Rp_R,cos,sin
+def demandExactEta(yesNo):
+    global exact
+    if yesNo==1:
+        exact=1
+        print('Solution for eta is now exact')
+        print('WARNING: This is slow and unnesecary for all but very high eccentricities')
+    elif yesNo==0:
+        exact=0
+        print('Solution for eta is now approximate (though accurate and quick)')
+        print('This is probably a good idea for all but very high eccentricities')
+    else:
+        print('Argument not understood, enter either 0 (for approximate solution) or 1 (for exact)')
     
