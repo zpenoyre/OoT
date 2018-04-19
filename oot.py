@@ -116,7 +116,7 @@ def vSum(t,pl): #[raw units->ms-1]
     return vOrbit(t,pl)+vTide(t,pl)
 def deltaTide(t,pl,whichMode=1): #[raw units->unitless]
     epsilon=findEpsilon(t,pl,whichMode=whichMode)
-    return -(49+16*(pl.beta**-1))*epsilon/8
+    return -(49+16*(pl.beta**-1))*epsilon/40
 def deltaBeam(t,pl): #[raw units->unitless]
     velocity=vOrbit(t,pl)
     return -4*velocity/3e8 #-ve sign as luminosity increased when star is mvoing towards us
