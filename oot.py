@@ -137,7 +137,7 @@ def deltaReflect(t,pl,secondary=1): #[raw units->unitless]
         total=np.argwhere((d<(pl.R-pl.Rp)) & ((psi%(2*np.pi)) > np.pi/2) & ((psi%(2*np.pi)) < 3*np.pi/2)) #indices of times when there is a total secondary eclipse
         eclipseFactor[total]=0
         partial=np.argwhere((d<(pl.R+pl.Rp)) & (d>(pl.R-pl.Rp)) & ((psi%(2*np.pi)) > np.pi/2) & ((psi%(2*np.pi)) < 3*np.pi/2)) #indices of times when there is a partial secondary eclipse
-        #using circle cirle intersection formula from Mathworld
+        #using circle cirle intersection formula from Mathworld - CURRENTLY GIVES NAN FOR RP > R
         firstTerm=((rUnit*pl.Rp)**2)*np.arccos((d**2 + (rUnit*pl.Rp)**2 - pl.R**2)/(2*d*(rUnit*pl.Rp)))
         secondTerm=(pl.R**2)*np.arccos((d**2 + pl.R**2 - (rUnit*pl.Rp)**2)/(2*d*pl.R))
         thirdTerm=-0.5*np.sqrt((d+(rUnit*pl.Rp)+pl.R)*(d+(rUnit*pl.Rp)-pl.R)*(d+pl.R-(rUnit*pl.Rp))*(-d+pl.R+(rUnit*pl.Rp)))
@@ -160,6 +160,14 @@ def batman(pl): #returns parameters for batman (https://www.cfa.harvard.edu/~lkr
     if b>(pl.R+rUnit*pl.Rp)/pl.R:
         raise NonTransitingError("This planet does not transit!")
     return t0,per,rp,a,inc,ecc,w
+    
+def checkTransit(pl): # checks if the planet (primary) transits, 1 if yes, -1 if not
+    eta0=findEtaPhi(pl.vPhi,pl)
+    b=(aUnit*pl.a)*(1-pl.e*np.cos(eta0))*np.cos(pl.vTheta)/pl.R #projected impact paramter of planet at closest approach
+    if b>(pl.R+rUnit*pl.Rp)/pl.R:
+        return -1
+    return 1
+    
     
 def setTimeUnits(unit):
     global tUnit
