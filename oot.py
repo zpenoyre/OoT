@@ -128,7 +128,7 @@ def deltaReflect(t,pl,secondary=1): #[raw units->unitless]
     sGamma=np.sqrt(1-cGamma**2)
     gamma=np.abs(np.arctan2(sGamma,cGamma))
     num=sGamma+(np.pi-gamma)*cGamma
-    denom=np.pi*(1-pl.e*np.cos(eta))
+    denom=np.pi*(1-pl.e*np.cos(eta))**2
     #checking for secondary eclipse
     eclipseFactor=np.ones_like(t)
     if secondary==1:
