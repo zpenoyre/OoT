@@ -35,7 +35,7 @@ class planet:
         self.vTheta=np.pi/2
         self.vPhi=0
         self.tp=0 #time of periapse (if using real data with arbitrary t=0)
-        
+
 class NonTransitingError(Exception):
     pass
 
@@ -104,7 +104,7 @@ def findVelocity(t,pl,whichMode=1): #[raw units -> rSun/day]
     lhs=2*np.sqrt(1-pl.e**2)*(np.sin(pl.vTheta)**2)*np.sin(2*psi)*(a-b)
     rhs=3*pl.e*np.sin(eta)*(a*np.power(np.sin(pl.vTheta)*np.cos(psi),2) + b*np.power(np.sin(pl.vTheta)*np.sin(psi),2) + c*np.power(np.cos(pl.vTheta),2))
     return -kappa*(lhs+rhs)
-    
+
 def vOrbit(t,pl): #[raw units->ms-1]
     Phi=findPhi(t,pl)
     psi=pl.vPhi-Phi
@@ -160,15 +160,15 @@ def batman(pl): #returns parameters for batman (https://www.cfa.harvard.edu/~lkr
     if b>(pl.R+rUnit*pl.Rp)/pl.R:
         raise NonTransitingError("This planet does not transit!")
     return t0,per,rp,a,inc,ecc,w
-    
+
 def checkTransit(pl): # checks if the planet (primary) transits, 1 if yes, -1 if not
     eta0=findEtaPhi(pl.vPhi,pl)
     b=(aUnit*pl.a)*(1-pl.e*np.cos(eta0))*np.cos(pl.vTheta)/pl.R #projected impact paramter of planet at closest approach
     if b>(pl.R+rUnit*pl.Rp)/pl.R:
         return -1
     return 1
-    
-    
+
+
 def setTimeUnits(unit):
     global tUnit
     if unit=='days':
@@ -179,7 +179,7 @@ def setTimeUnits(unit):
         tUnit==1/86400
     else:
         print('time unit not recognized, possible choices are "days" (default), "years" or "seconds"')
-        
+
 def setPlanetUnits(unit):
     global rUnit,mUnit
     if unit=='solar':
@@ -193,7 +193,7 @@ def setPlanetUnits(unit):
         mUnit==Me
     else:
         print('planet unit not recognized, possible choices are "solar" (default), "jupiter" or "earth"')
-        
+
 def setOrbitUnits(unit):
     global aUnit
     if unit=='solar':
@@ -202,7 +202,7 @@ def setOrbitUnits(unit):
         aUnit=AU
     else:
         print('orbital distance unit not recognized, possible choices are "solar" (default), "AU"')
-        
+
 def demandExactEta(yesNo):
     global exact
     if yesNo==1:
@@ -215,4 +215,3 @@ def demandExactEta(yesNo):
         print('This is probably a good idea for all but very high eccentricities')
     else:
         print('Argument not understood, enter either 0 (for approximate solution) or 1 (for exact)')
-    
